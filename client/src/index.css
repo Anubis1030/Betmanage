@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Modern dark theme with cyan accents */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary: Cyan accent */
+    --primary: 188 100% 50%;
+    --primary-foreground: 222.2 84% 4.9%;
+
+    /* Secondary: Dark blue */
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Accent: Bright cyan */
+    --accent: 188 100% 50%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 188 100% 50%;
+
+    /* Custom tokens for the platform */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    
+    --warning: 45 90% 55%;
+    --warning-foreground: 222.2 84% 4.9%;
+    
+    --info: 188 100% 50%;
+    --info-foreground: 222.2 84% 4.9%;
+
+    /* Enhanced gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(188 100% 50%), hsl(217 91% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(188 100% 50%), hsl(188 100% 70%));
+    --gradient-card: linear-gradient(145deg, hsl(222.2 84% 4.9%), hsl(217.2 32.6% 17.5%));
+
+    /* Enhanced shadows with cyan glow */
+    --shadow-card: 0 4px 6px -1px hsl(222.2 84% 4.9% / 0.3), 0 2px 4px -1px hsl(188 100% 50% / 0.1);
+    --shadow-elevated: 0 10px 15px -3px hsl(222.2 84% 4.9% / 0.3), 0 4px 6px -2px hsl(188 100% 50% / 0.1);
+    --shadow-glow: 0 0 20px hsl(188 100% 50% / 0.3);
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 188 100% 50%;
+    --sidebar-primary-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 188 100% 50%;
+  }
+
+  .dark {
+    /* Consistent dark theme with enhanced effects */
+    --background: 222.2 84% 2.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 3.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 2.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 188 100% 60%;
+    --primary-foreground: 222.2 84% 4.9%;
+
+    --secondary: 217.2 32.6% 14.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 14.5%;
+    --muted-foreground: 215 20.2% 70.1%;
+
+    --accent: 188 100% 60%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 14.5%;
+    --input: 217.2 32.6% 14.5%;
+    --ring: 188 100% 60%;
+
+    /* Enhanced dark mode colors */
+    --success: 142 76% 45%;
+    --success-foreground: 210 40% 98%;
+    
+    --warning: 45 90% 65%;
+    --warning-foreground: 222.2 84% 4.9%;
+    
+    --info: 188 100% 60%;
+    --info-foreground: 222.2 84% 4.9%;
+
+    --sidebar-background: 222.2 84% 2.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 188 100% 60%;
+    --sidebar-primary-foreground: 222.2 84% 4.9%;
+    --sidebar-accent: 217.2 32.6% 14.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 14.5%;
+    --sidebar-ring: 188 100% 60%;
+
+    /* Enhanced dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(188 100% 50%), hsl(217 91% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(188 100% 60%), hsl(188 100% 80%));
+    --gradient-card: linear-gradient(145deg, hsl(222.2 84% 3.9%), hsl(217.2 32.6% 14.5%));
+
+    /* Enhanced dark mode shadows with cyan glow */
+    --shadow-card: 0 4px 6px -1px hsl(222.2 84% 2.9% / 0.4), 0 2px 4px -1px hsl(188 100% 60% / 0.1);
+    --shadow-elevated: 0 10px 15px -3px hsl(222.2 84% 2.9% / 0.4), 0 4px 6px -2px hsl(188 100% 60% / 0.1);
+    --shadow-glow: 0 0 20px hsl(188 100% 60% / 0.4);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at 20% 50%, hsl(188 100% 50% / 0.02) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, hsl(217 91% 60% / 0.02) 0%, transparent 50%);
+  }
+  
+  /* Enhanced scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}

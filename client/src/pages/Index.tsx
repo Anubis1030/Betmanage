@@ -1,0 +1,189 @@
+import { useState } from "react";
+import { Navigation } from "@/components/Navigation";
+import { HeroSection } from "@/components/HeroSection";
+import { DashboardStats } from "@/components/DashboardStats";
+import { MatchCard } from "@/components/MatchCard";
+import { RecentActivity } from "@/components/RecentActivity";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Trophy, History } from "lucide-react";
+
+// Mock data
+const mockMatches = [
+  {
+    id: "1",
+    teamA: "Manchester United",
+    teamB: "Liverpool",
+    dateTime: "2024-01-20T15:00:00",
+    oddsA: 2.5,
+    oddsB: 1.8,
+    status: "upcoming" as const,
+    totalBets: 45,
+    userBet: { team: "Manchester United", amount: 100 }
+  },
+  {
+    id: "2",
+    teamA: "Arsenal",
+    teamB: "Chelsea",
+    dateTime: "2024-01-21T17:30:00",
+    oddsA: 1.9,
+    oddsB: 2.2,
+    status: "live" as const,
+    totalBets: 67
+  },
+  {
+    id: "3",
+    teamA: "Barcelona",
+    teamB: "Real Madrid",
+    dateTime: "2024-01-22T20:00:00",
+    oddsA: 2.1,
+    oddsB: 1.95,
+    status: "upcoming" as const,
+    totalBets: 89
+  }
+];
+
+const mockActivities = [
+  {
+    id: "1",
+    type: "win" as const,
+    description: "Prediction won - Correct result!",
+    amount: 250,
+    timestamp: "2024-01-19T18:30:00",
+    match: "Bayern Munich vs PSG",
+    odds: 2.5,
+    selectedTeam: "Bayern Munich",
+    matchResult: "Bayern Munich won 3-1",
+    matchScore: "3-1",
+    potentialWin: 250,
+    matchDate: "2024-01-19"
+  },
+  {
+    id: "2",
+    type: "bet" as const,
+    description: "New bet placed - Active prediction",
+    amount: 100,
+    timestamp: "2024-01-19T14:15:00",
+    match: "Manchester United vs Liverpool",
+    odds: 1.8,
+    selectedTeam: "Manchester United",
+    potentialWin: 180,
+    matchDate: "2024-01-20"
+  },
+  {
+    id: "3",
+    type: "bonus" as const,
+    description: "Weekly active user bonus",
+    amount: 150,
+    timestamp: "2024-01-18T09:00:00"
+  },
+  {
+    id: "4",
+    type: "loss" as const,
+    description: "Prediction lost - Wrong result",
+    amount: 75,
+    timestamp: "2024-01-17T21:45:00",
+    match: "Juventus vs AC Milan",
+    odds: 2.1,
+    selectedTeam: "Juventus",
+    matchResult: "AC Milan won 2-0",
+    matchScore: "0-2",
+    matchDate: "2024-01-17"
+  },
+  {
+    id: "5",
+    type: "win" as const,
+    description: "Perfect prediction - High odds win!",
+    amount: 420,
+    timestamp: "2024-01-16T16:20:00",
+    match: "Chelsea vs Arsenal",
+    odds: 3.5,
+    selectedTeam: "Chelsea",
+    matchResult: "Chelsea won 4-2",
+    matchScore: "4-2",
+    potentialWin: 420,
+    matchDate: "2024-01-16"
+  }
+];
+
+const Index = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation userCoins={1250} />
+      
+      {activeTab === "dashboard" && <HeroSection />}
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
+            <TabsTrigger value="dashboard" className="flex items-center">
+              <Trophy className="w-4 h-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="matches" className="flex items-center">
+              <Calendar className="w-4 h-4 mr-2" />
+              Matches
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center">
+              <History className="w-4 h-4 mr-2" />
+              History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-8">
+            <DashboardStats
+              totalCoins={1250}
+              activeBets={3}
+              winRate={68}
+              totalWinnings={2850}
+            />
+            
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground">Upcoming Matches</h2>
+                  <Button variant="outline" onClick={() => setActiveTab("matches")}>
+                    View All
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {mockMatches.slice(0, 2).map((match) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))}
+                </div>
+              </div>
+              
+              <RecentActivity activities={mockActivities} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="matches" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-foreground mb-4">All Matches</h2>
+              <p className="text-muted-foreground">Place your predictions and earn coins</p>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {mockMatches.map((match) => (
+                <MatchCard key={match.id} {...match} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-foreground mb-4">Prediction History</h2>
+              <p className="text-muted-foreground">Track your betting performance</p>
+            </div>
+            
+            <RecentActivity activities={mockActivities} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default Index;

@@ -1,37 +1,15 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
+const UserSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    phone: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    coinBalance: { type: Number, default: 0, min: 0 },
+    isBlocked: { type: Boolean, default: false },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
   },
-  username: {
-    type: String,
-    unique: true,
-    required: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
-  },
-  webCoins: {
-    type: Number,
-    default: 0
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+  { timestamps: true }
+);
 
-
-export default mongoose.model('User', UserSchema);
+export default mongoose.model("User", UserSchema);

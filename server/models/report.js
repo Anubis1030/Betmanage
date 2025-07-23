@@ -1,24 +1,22 @@
 import mongoose from 'mongoose';
 
-const reportSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+const ReportSchema = new mongoose.Schema({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  type: {
-    type: String,
-    enum: ['bet', 'transaction'],
-    required: true
+  type: { 
+    type: String, 
+    enum: ['withdrawal', 'issue', 'request'], 
+    required: true 
   },
-  referenceId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true
-  },
-  details: mongoose.Schema.Types.Mixed,
-  createdAt: {
-    type: Date,
-    default: Date.now
+  description: { type: String, required: true },
+  status: { 
+    type: String, 
+    enum: ['pending', 'resolved', 'rejected'], 
+    default: 'pending' 
   }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('Report', reportSchema);
+export default mongoose.model('Report', ReportSchema);

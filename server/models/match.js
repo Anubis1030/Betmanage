@@ -1,27 +1,22 @@
 import mongoose from 'mongoose';
 
-const matchSchema = new mongoose.Schema({
-  matchId: {
-    type: String,
-    required: true
+const MatchSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  startTime: { type: Date, required: true },
+  teamA: { type: String, required: true },
+  teamB: { type: String, required: true },
+  oddsA: { type: Number, required: true, min: 1 },
+  oddsB: { type: Number, required: true, min: 1 },
+  status: { 
+    type: String, 
+    enum: ['Scheduled', 'Ongoing', 'Completed'], 
+    default: 'Scheduled' 
   },
-  teamA: String,
-  teamB: String,
-  matchTime: Date,
-  odds: {
-    teamA: Number,
-    teamB: Number,
-    draw: Number
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  result: {
-    type: String,
-    enum: ['teamA', 'teamB', 'draw', 'pending'],
-    default: 'pending'
+  result: { 
+    type: String, 
+    enum: ['TeamA', 'TeamB', 'Draw'], 
+    default: null 
   }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('Match', matchSchema);
+export default mongoose.model('Match', MatchSchema);

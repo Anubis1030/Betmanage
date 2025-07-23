@@ -1,35 +1,29 @@
 import mongoose from 'mongoose';
 
-const betSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const BetSchema = new mongoose.Schema({
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  matchId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Match',
-    required: true
+  matchId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Match', 
+    required: true 
   },
-  betOn: {
-    type: String,
-    enum: ['teamA', 'teamB', 'draw'],
-    required: true
+  teamChosen: { 
+    type: String, 
+    enum: ['TeamA', 'TeamB'], 
+    required: true 
   },
-  amount: {
-    type: Number,
-    required: true
+  amount: { type: Number, required: true, min: 1 },
+  odds: { type: Number, required: true },
+  status: { 
+    type: String, 
+    enum: ['pending', 'won', 'lost'], 
+    default: 'pending' 
   },
-  oddsAtBetTime: Number,
-  status: {
-    type: String,
-    enum: ['pending', 'won', 'lost'],
-    default: 'pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+  resultAmount: { type: Number, default: 0 }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Bet', betSchema);
+export default mongoose.model('Bet', BetSchema);

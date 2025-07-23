@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const UserSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    phone: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     coinBalance: { type: Number, default: 0, min: 0 },
     isBlocked: { type: Boolean, default: false },

@@ -6,24 +6,28 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { AuthAPI } from '../api/authAPI';
 
 const Login = () => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [registerData, setRegisterData] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Login Successful",
-      description: "Welcome back to the prediction platform!",
-    });
-    // Navigate to home page after successful login
-    navigate("/");
-  };
 
-  const handleRegister = (e: React.FormEvent) => {
+
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    const { data } = await AuthAPI.login(loginData);
+    localStorage.setItem('token', data.token);
+    navigate('/');
+  } catch (error) {
+    toast({ title: 'Login Failed', variant: 'destructive' });
+  }
+};
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (registerData.password !== registerData.confirmPassword) {
       toast({
@@ -33,12 +37,31 @@ const Login = () => {
       });
       return;
     }
-    toast({
-      title: "Registration Successful",
-      description: "Your account has been created successfully!",
-    });
-    // Navigate to home page after successful registration
-    navigate("/");
+    
+    try {
+      const { data } = await AuthAPI.register({
+        name: registerData.name,
+        email: registerData.email,
+        phone: registerData.phone,
+        password: registerData.password
+      });
+      
+      localStorage.setItem('token', data.token);
+      
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created successfully!",
+      });
+      
+      // Navigate to home page after successful registration
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error?.response?.data?.message || "Could not create account",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -110,6 +133,16 @@ const Login = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="reg-phone">Phone (Optional)</Label>
+                  <Input
+                    id="reg-phone"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={registerData.phone}
+                    onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="reg-password">Password</Label>
                   <Input
                     id="reg-password"
@@ -118,6 +151,7 @@ const Login = () => {
                     value={registerData.password}
                     onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 <div className="space-y-2">
@@ -129,6 +163,7 @@ const Login = () => {
                     value={registerData.confirmPassword}
                     onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
                     required
+                    autoComplete="new-password"
                   />
                 </div>
                 <Button type="submit" className="w-full">

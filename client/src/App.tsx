@@ -14,6 +14,9 @@ import BettingHistory from "./pages/BettingHistory";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AdminBets from "./pages/AdminBets";
+import AdminRoute from "@/components/AdminRoute";
+import AdminUsers from "@/pages/AdminUsers";
+import UserRoute from "@/components/UserRoute";
 
 const queryClient = new QueryClient();
 
@@ -42,12 +45,13 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/bets" element={<AdminBets />} />
+            <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/dashboard/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="/admin/bets" element={<AdminRoute><AdminBets /></AdminRoute>} />
             <Route path="/match/:id" element={<MatchDetails />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/betting-history" element={<BettingHistory />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<UserRoute><Profile /></UserRoute>} />
+            <Route path="/betting-history" element={<UserRoute><BettingHistory /></UserRoute>} />
+            <Route path="/settings" element={<UserRoute><Settings /></UserRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

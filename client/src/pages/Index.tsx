@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { HeroSection } from "@/components/HeroSection";
 import { DashboardStats } from "@/components/DashboardStats";
@@ -7,42 +7,10 @@ import { RecentActivity } from "@/components/RecentActivity";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Trophy, History } from "lucide-react";
+import { MatchesAPI } from "@/api";
+import { AuthAPI } from "@/api/authAPI";
 
 // Mock data
-const mockMatches = [
-  {
-    id: "1",
-    teamA: "Manchester United",
-    teamB: "Liverpool",
-    dateTime: "2024-01-20T15:00:00",
-    oddsA: 2.5,
-    oddsB: 1.8,
-    status: "upcoming" as const,
-    totalBets: 45,
-    userBet: { team: "Manchester United", amount: 100 }
-  },
-  {
-    id: "2",
-    teamA: "Arsenal",
-    teamB: "Chelsea",
-    dateTime: "2024-01-21T17:30:00",
-    oddsA: 1.9,
-    oddsB: 2.2,
-    status: "live" as const,
-    totalBets: 67
-  },
-  {
-    id: "3",
-    teamA: "Barcelona",
-    teamB: "Real Madrid",
-    dateTime: "2024-01-22T20:00:00",
-    oddsA: 2.1,
-    oddsB: 1.95,
-    status: "upcoming" as const,
-    totalBets: 89
-  }
-];
-
 const mockActivities = [
   {
     id: "1",
@@ -108,6 +76,65 @@ const mockActivities = [
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      setLoading(true);
+      try {
+        const { data } = await MatchesAPI.getActiveMatches();
+        setMatches(data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load matches");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMatches();
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setStatsLoading(true);
+      try {
+        const { data: user } = await AuthAPI.getProfile();
+        const { data } = await AuthAPI.getStats(user._id);
+        setStats(data);
+        setStatsError(null);
+      } catch (err) {
+        setStatsError("Failed to load stats");
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setActivityLoading(true);
+      try {
+        const { data: user } = await AuthAPI.getProfile();
+        const { data } = await AuthAPI.getActivity(user._id);
+        setActivities(data);
+        setActivityError(null);
+      } catch (err) {
+        setActivityError("Failed to load recent activity");
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+    fetchActivities();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,12 +160,18 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-8">
-            <DashboardStats
-              totalCoins={1250}
-              activeBets={3}
-              winRate={68}
-              totalWinnings={2850}
-            />
+            {statsLoading ? (
+              <div>Loading stats...</div>
+            ) : statsError ? (
+              <div className="text-red-500">{statsError}</div>
+            ) : stats ? (
+              <DashboardStats
+                totalCoins={stats.totalCoins}
+                activeBets={stats.activeBets}
+                winRate={stats.winRate}
+                totalWinnings={stats.totalWinnings}
+              />
+            ) : null}
             
             <div className="grid gap-8 lg:grid-cols-2">
               <div>
@@ -149,13 +182,25 @@ const Index = () => {
                   </Button>
                 </div>
                 <div className="space-y-4">
-                  {mockMatches.slice(0, 2).map((match) => (
-                    <MatchCard key={match.id} {...match} />
-                  ))}
+                  {loading ? (
+                    <div>Loading...</div>
+                  ) : error ? (
+                    <div className="text-red-500">{error}</div>
+                  ) : (
+                    matches.slice(0, 2).map((match) => (
+                      <MatchCard key={match._id || match.id} {...match} />
+                    ))
+                  )}
                 </div>
               </div>
               
-              <RecentActivity activities={mockActivities} />
+              {activityLoading ? (
+                <div>Loading activity...</div>
+              ) : activityError ? (
+                <div className="text-red-500">{activityError}</div>
+              ) : (
+                <RecentActivity activities={activities} />
+              )}
             </div>
           </TabsContent>
 
@@ -166,9 +211,15 @@ const Index = () => {
             </div>
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {mockMatches.map((match) => (
-                <MatchCard key={match.id} {...match} />
-              ))}
+              {loading ? (
+                <div>Loading...</div>
+              ) : error ? (
+                <div className="text-red-500">{error}</div>
+              ) : (
+                matches.map((match) => (
+                  <MatchCard key={match._id || match.id} {...match} />
+                ))
+              )}
             </div>
           </TabsContent>
 

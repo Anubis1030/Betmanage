@@ -150,3 +150,25 @@ export const processBets = async (req, res) => {
     });
   }
 };
+
+// @desc    Get all bets (admin)
+// @route   GET /api/bets
+// @access  Private/Admin
+export const getAllBets = async (req, res) => {
+  try {
+    const bets = await Bet.find()
+      .populate('userId', 'name email')
+      .populate('matchId', 'title teamA teamB startTime status result')
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      count: bets.length,
+      data: bets
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

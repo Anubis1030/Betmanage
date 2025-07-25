@@ -3,12 +3,16 @@ import {
   placeBet, 
   getUserBets, 
   getMatchBets, 
-  processBets 
-} from "../controllers/BetControllers.js";
+  processBets, 
+  getAllBets 
+} from "../controllers/betControllers.js";
+import { protect, admin } from '../middleware/auth.js';
 const router = Router();
 
-router.post("/", placeBet);
-router.get("/user/:userId", getUserBets);
-router.get("/match/:matchId", getMatchBets);
+router.post("/", protect, placeBet);
+router.get("/user/:userId", protect, getUserBets);
+router.get("/match/:matchId", protect, getMatchBets);
+router.post("/process", protect, admin, processBets);
+router.get("/", protect, admin, getAllBets);
 
 export default router;

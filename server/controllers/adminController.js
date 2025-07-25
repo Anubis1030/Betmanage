@@ -1,18 +1,28 @@
 import User from '../models/User.js';
 import Bet from '../models/Bet.js';
-import Report from '../models/report.js';
+import Match from '../models/Match.js';
 import WebCoinTransaction from '../models/WebCoinTransaction.js';
 
-// @desc    Get all users
+// @desc    Get all users (paginated, with optional search)
 // @route   GET /api/admin/users
 // @access  Private/Admin
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
-    res.json(users);
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const query = search
+      ? { $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ] }
+      : {};
+    const users = await User.find(query)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+    const total = await User.countDocuments(query);
+    res.json({ success: true, data: users, total });
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  } 
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // @desc    Toggle user block status
@@ -99,5 +109,50 @@ export const generateSettlementReport = async (req, res) => {
     res.json(report);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get platform-wide admin stats
+// @route   GET /api/admin/stats
+// @access  Private/Admin
+export const getAdminStats = async (req, res) => {
+  try {
+    const [userCount, betCount, matchCount, transactionCount, users] = await Promise.all([
+      User.countDocuments(),
+      Bet.countDocuments(),
+      Match.countDocuments(),
+      WebCoinTransaction.countDocuments(),
+      User.find({}, 'coinBalance')
+    ]);
+    const totalCoins = users.reduce((sum, u) => sum + (u.coinBalance || 0), 0);
+    res.json({
+      success: true,
+      data: {
+        userCount,
+        betCount,
+        matchCount,
+        transactionCount,
+        totalCoins
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get recent bets (admin)
+// @route   GET /api/admin/bets/recent
+// @access  Private/Admin
+export const getRecentBets = async (req, res) => {
+  try {
+    const { limit = 20 } = req.query;
+    const bets = await Bet.find()
+      .populate('userId', 'name email')
+      .populate('matchId', 'title teamA teamB startTime status result')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit));
+    res.json({ success: true, data: bets });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

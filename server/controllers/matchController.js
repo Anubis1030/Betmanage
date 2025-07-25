@@ -72,3 +72,43 @@ export const getActiveMatches = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get match by ID
+// @route   GET /api/matches/:id
+// @access  Public
+export const getMatchById = async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id);
+    if (match) {
+      res.json(match);
+    } else {
+      res.status(404).json({ message: 'Match not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get completed matches
+// @route   GET /api/matches/completed
+// @access  Public
+export const getCompletedMatches = async (req, res) => {
+  try {
+    const matches = await Match.find({ status: 'Completed' });
+    res.json({ success: true, data: matches });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get upcoming matches
+// @route   GET /api/matches/upcoming
+// @access  Public
+export const getUpcomingMatches = async (req, res) => {
+  try {
+    const matches = await Match.find({ status: 'Scheduled' });
+    res.json({ success: true, data: matches });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

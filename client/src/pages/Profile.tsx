@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { User, Settings, History, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthAPI, TransactionAPI } from "@/api";
 
 const Profile = () => {
   const [profileData, setProfileData] = useState({
@@ -20,6 +21,9 @@ const Profile = () => {
     new: "",
     confirm: ""
   });
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleProfileUpdate = (e: React.FormEvent) => {
@@ -47,19 +51,29 @@ const Profile = () => {
     setPasswordData({ current: "", new: "", confirm: "" });
   };
 
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const { data: user } = await AuthAPI.getProfile();
+        const data = await TransactionAPI.getUserTransactions(user._id);
+        setTransactions(data.data || []);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load transactions");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
+
   const userStats = {
     totalBets: 24,
     winRate: 68,
     totalWinnings: 2850,
     currentStreak: 3
   };
-
-  const coinHistory = [
-    { date: "2024-01-19", type: "win", amount: 250, description: "Correct prediction - Bayern vs PSG" },
-    { date: "2024-01-18", type: "bonus", amount: 150, description: "Weekly bonus coins" },
-    { date: "2024-01-17", type: "loss", amount: -75, description: "Lost bet - Juventus vs AC Milan" },
-    { date: "2024-01-16", type: "win", amount: 180, description: "Correct prediction - Arsenal vs Chelsea" },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,22 +185,30 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {coinHistory.map((transaction, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{transaction.description}</div>
-                        <div className="text-sm text-muted-foreground">{transaction.date}</div>
+                  {loading ? (
+                    <div>Loading transactions...</div>
+                  ) : error ? (
+                    <div className="text-red-500">{error}</div>
+                  ) : transactions.length === 0 ? (
+                    <div>No transactions found.</div>
+                  ) : (
+                    transactions.map((transaction, index) => (
+                      <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <div className="font-medium">{transaction.reason || transaction.type}</div>
+                          <div className="text-sm text-muted-foreground">{new Date(transaction.createdAt).toLocaleDateString()}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={transaction.type === "credit" ? "default" : "destructive"}>
+                            {transaction.type}
+                          </Badge>
+                          <span className={`font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+                            {transaction.type === "credit" ? "+" : "-"}{transaction.amount}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={transaction.type === "win" || transaction.type === "bonus" ? "default" : "destructive"}>
-                          {transaction.type}
-                        </Badge>
-                        <span className={`font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {transaction.amount > 0 ? "+" : ""}{transaction.amount}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

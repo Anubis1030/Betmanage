@@ -4,48 +4,30 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-
-// Mock data for demonstration
-const mockBets = [
-  {
-    id: 1,
-    user: "John Doe",
-    match: "Manchester United vs Liverpool",
-    selectedTeam: "Liverpool",
-    betAmount: 100,
-    odds: 1.8,
-    timestamp: "2024-07-21T15:00:00",
-  },
-  {
-    id: 2,
-    user: "Jane Smith",
-    match: "Arsenal vs Chelsea",
-    selectedTeam: "Arsenal",
-    betAmount: 200,
-    odds: 2.1,
-    timestamp: "2024-07-21T16:00:00",
-  },
-  {
-    id: 3,
-    user: "Alex Lee",
-    match: "Barcelona vs Real Madrid",
-    selectedTeam: "Real Madrid",
-    betAmount: 150,
-    odds: 2.3,
-    timestamp: "2024-07-21T17:00:00",
-  },
-  {
-    id: 4,
-    user: "Priya Patel",
-    match: "Juventus vs AC Milan",
-    selectedTeam: "Juventus",
-    betAmount: 120,
-    odds: 2.0,
-    timestamp: "2024-07-21T18:00:00",
-  },
-];
+import { useState, useEffect } from "react";
+import { BetsAPI } from "@/api";
 
 const AdminBets = () => {
+  const [bets, setBets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBets = async () => {
+      setLoading(true);
+      try {
+        const { data } = await BetsAPI.getAllBets();
+        setBets(data.data || []);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load bets");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBets();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -74,18 +56,38 @@ const AdminBets = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockBets.map((bet) => (
-                    <TableRow key={bet.id}>
-                      <TableCell className="font-medium">{bet.user}</TableCell>
-                      <TableCell>{bet.match}</TableCell>
-                      <TableCell>
-                        <Badge variant="info">{bet.selectedTeam}</Badge>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        Loading bets...
                       </TableCell>
-                      <TableCell>{bet.betAmount} coins</TableCell>
-                      <TableCell>{bet.odds}x</TableCell>
-                      <TableCell>{new Date(bet.timestamp).toLocaleString()}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : error ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-red-500">
+                        {error}
+                      </TableCell>
+                    </TableRow>
+                  ) : bets.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        No bets found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    bets.map((bet) => (
+                      <TableRow key={bet.id}>
+                        <TableCell className="font-medium">{bet.user}</TableCell>
+                        <TableCell>{bet.match}</TableCell>
+                        <TableCell>
+                          <Badge variant="info">{bet.selectedTeam}</Badge>
+                        </TableCell>
+                        <TableCell>{bet.betAmount} coins</TableCell>
+                        <TableCell>{bet.odds}x</TableCell>
+                        <TableCell>{new Date(bet.timestamp).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

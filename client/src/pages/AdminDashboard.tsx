@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Trophy, Coins, TrendingUp, Plus, Settings, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { MatchesAPI } from "@/api";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -19,6 +20,7 @@ const AdminDashboard = () => {
     oddsA: "",
     oddsB: ""
   });
+  const navigate = useNavigate();
 
   const adminStats = {
     totalUsers: 156,
@@ -38,13 +40,33 @@ const AdminDashboard = () => {
     { id: 2, teamA: "Arsenal", teamB: "Chelsea", date: "2024-01-21", status: "live" },
   ];
 
-  const handleCreateMatch = (e: React.FormEvent) => {
+  const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Match Created",
-      description: `${newMatch.teamA} vs ${newMatch.teamB} scheduled successfully!`,
-    });
-    setNewMatch({ teamA: "", teamB: "", dateTime: "", oddsA: "", oddsB: "" });
+    try {
+      const matchData = {
+        teamA: newMatch.teamA,
+        teamB: newMatch.teamB,
+        startTime: newMatch.dateTime,
+        oddsA: parseFloat(newMatch.oddsA),
+        oddsB: parseFloat(newMatch.oddsB),
+      };
+      const { data } = await MatchesAPI.createMatch(matchData);
+      if (data && (data._id || data.id)) {
+        toast({
+          title: "Match Created",
+          description: `${newMatch.teamA} vs ${newMatch.teamB} scheduled successfully!`,
+        });
+        setNewMatch({ teamA: "", teamB: "", dateTime: "", oddsA: "", oddsB: "" });
+      } else {
+        throw new Error("No match created");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to create match.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCoinAdjustment = (userId: number, amount: number) => {
@@ -54,12 +76,20 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/admin/login");
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage your football prediction platform</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage your football prediction platform</p>
+          </div>
+          <button onClick={handleLogout} className="px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/80 transition">Logout</button>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">

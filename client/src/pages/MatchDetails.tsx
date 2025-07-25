@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -8,27 +8,32 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Trophy, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { MatchesAPI } from "@/api";
 
 const MatchDetails = () => {
   const { id } = useParams();
   const [betAmount, setBetAmount] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const { toast } = useToast();
+  const [match, setMatch] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock match data
-  const match = {
-    id: id,
-    teamA: "Manchester United",
-    teamB: "Liverpool",
-    dateTime: "2024-01-20T15:00:00",
-    oddsA: 2.5,
-    oddsB: 1.8,
-    status: "upcoming" as const,
-    totalBets: 45,
-    description: "Premier League - Matchday 20",
-    venue: "Old Trafford",
-    userBet: null
-  };
+  useEffect(() => {
+    const fetchMatch = async () => {
+      setLoading(true);
+      try {
+        const { data } = await MatchesAPI.getMatchById(id!);
+        setMatch(data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load match");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchMatch();
+  }, [id]);
 
   const handlePlaceBet = () => {
     if (!selectedTeam || !betAmount) {
@@ -39,15 +44,16 @@ const MatchDetails = () => {
       });
       return;
     }
-
     toast({
       title: "Bet Placed Successfully!",
       description: `${betAmount} coins on ${selectedTeam}`,
     });
-    
     setBetAmount("");
     setSelectedTeam(null);
   };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (error || !match) return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Match not found"}</div>;
 
   return (
     <div className="min-h-screen bg-background">

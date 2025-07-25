@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,20 +6,53 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AuthAPI } from "@/api/authAPI";
 
 const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const { data } = await AuthAPI.getProfile();
+          if (data && data.role === "admin") {
+            navigate("/admin/dashboard");
+          }
+        } catch {}
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Admin Login Successful",
-      description: "Welcome to the admin dashboard!",
-    });
-    // Navigate to admin dashboard after successful login
-    navigate("/admin/dashboard");
+    try {
+      const { data } = await AuthAPI.login(credentials);
+      if (data && data.token && data.role === "admin") {
+        localStorage.setItem("token", data.token);
+        toast({
+          title: "Admin Login Successful",
+          description: "Welcome to the admin dashboard!",
+        });
+        navigate("/admin/dashboard");
+      } else {
+        toast({
+          title: "Access Denied",
+          description: "You are not authorized as an admin.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error?.response?.data?.message || "Invalid credentials.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -22,6 +22,9 @@ export const Navigation = ({ userCoins = 1250 }: NavigationProps) => {
   const { toast } = useToast();
 
   const handleLogout = () => {
+    // Remove the token from localStorage
+    localStorage.removeItem("token");
+    
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",

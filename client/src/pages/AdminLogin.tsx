@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const redirect = new URLSearchParams(search).get('redirect') || '/admin/dashboard';
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -20,31 +22,40 @@ const AdminLogin = () => {
         try {
           const { data } = await AuthAPI.getProfile();
           if (data && data.role === "admin") {
-            navigate("/admin/dashboard");
+            navigate(redirect);
           }
         } catch {}
       }
     };
     checkAdmin();
-  }, [navigate]);
+  }, [navigate, redirect]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data } = await AuthAPI.login(credentials);
-      if (data && data.token && data.role === "admin") {
-        localStorage.setItem("token", data.token);
-        toast({
-          title: "Admin Login Successful",
-          description: "Welcome to the admin dashboard!",
-        });
-        navigate("/admin/dashboard");
-      } else {
-        toast({
-          title: "Access Denied",
-          description: "You are not authorized as an admin.",
-          variant: "destructive",
-        });
+      // First login the user
+      const loginResponse = await AuthAPI.login(credentials);
+      
+      if (loginResponse.data && loginResponse.data.token) {
+        localStorage.setItem("token", loginResponse.data.token);
+        
+        // Then get the user's profile to verify role
+        const profileResponse = await AuthAPI.getProfile();
+        
+        if (profileResponse.data.role === "admin") {
+          toast({
+            title: "Admin Login Successful",
+            description: "Welcome to the admin dashboard!",
+          });
+          navigate(redirect);
+        } else {
+          toast({
+            title: "Access Denied",
+            description: "You are not authorized as an admin. Redirecting to user dashboard.",
+            variant: "destructive",
+          });
+          navigate("/profile");
+        }
       }
     } catch (error: any) {
       toast({

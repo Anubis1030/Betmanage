@@ -20,7 +20,15 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Save the current path for redirect after login
+      const currentPath = window.location.pathname;
+      
+      // Check if the current path is an admin route
+      if (currentPath.startsWith('/admin')) {
+        window.location.href = `/admin/login?redirect=${encodeURIComponent(currentPath)}`;
+      } else {
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      }
     }
     return Promise.reject(error);
   }

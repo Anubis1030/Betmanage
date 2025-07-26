@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,16 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Trophy, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { MatchesAPI } from "@/api";
+import { MatchesAPI, BetsAPI, AuthAPI } from "@/api";
+import { AuthRequiredAction } from "@/components/AuthRequiredAction";
 
 const MatchDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [betAmount, setBetAmount] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const { toast } = useToast();
   const [match, setMatch] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [placingBet, setPlacingBet] = useState(false);
+  const [userCoins, setUserCoins] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchMatch = async () => {
@@ -35,7 +39,24 @@ const MatchDetails = () => {
     if (id) fetchMatch();
   }, [id]);
 
-  const handlePlaceBet = () => {
+  useEffect(() => {
+    // Try to get user profile to display available coins
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const { data } = await AuthAPI.getProfile();
+          setUserCoins(data.coinBalance || 1250); // Fallback to 1250 if not available
+        }
+      } catch (err) {
+        console.error("Could not fetch user profile", err);
+        // Don't show error toast as this is optional information
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  const handlePlaceBet = async () => {
     if (!selectedTeam || !betAmount) {
       toast({
         title: "Error",
@@ -44,12 +65,65 @@ const MatchDetails = () => {
       });
       return;
     }
-    toast({
-      title: "Bet Placed Successfully!",
-      description: `${betAmount} coins on ${selectedTeam}`,
-    });
-    setBetAmount("");
-    setSelectedTeam(null);
+
+    const amount = Number(betAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid bet amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (userCoins !== null && amount > userCoins) {
+      toast({
+        title: "Insufficient Coins",
+        description: "You don't have enough coins for this bet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setPlacingBet(true);
+      
+      // Determine which team was chosen (TeamA or TeamB in the API)
+      const teamChosen = selectedTeam === match.teamA ? 'TeamA' : 'TeamB';
+      
+      await BetsAPI.placeBet({
+        matchId: id!,
+        teamChosen,
+        amount,
+        odds: teamChosen === 'TeamA' ? match.oddsA : match.oddsB
+      });
+      
+      toast({
+        title: "Bet Placed Successfully!",
+        description: `${betAmount} coins on ${selectedTeam}`,
+      });
+      
+      // Update user coins
+      if (userCoins !== null) {
+        setUserCoins(userCoins - amount);
+      }
+      
+      setBetAmount("");
+      setSelectedTeam(null);
+      
+      // Optionally navigate to betting history
+      // navigate('/betting-history');
+    } catch (error: any) {
+      // Display the exact error message from the server
+      const errorMessage = error?.response?.data?.message || "An error occurred while placing your bet";
+      toast({
+        title: errorMessage.includes("Insufficient") ? "Insufficient Coins" : "Failed to Place Bet",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setPlacingBet(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -57,7 +131,7 @@ const MatchDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation userCoins={1250} />
+      <Navigation userCoins={userCoins || 0} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
@@ -75,14 +149,14 @@ const MatchDetails = () => {
                   <Badge variant="secondary">{match.status}</Badge>
                   <div className="flex items-center text-muted-foreground">
                     <Clock className="w-4 h-4 mr-1" />
-                    {new Date(match.dateTime).toLocaleString()}
+                    {new Date(match.startTime).toLocaleString()}
                   </div>
                 </div>
                 <CardTitle className="text-2xl sm:text-3xl text-center mt-2">
                   {match.teamA} vs {match.teamB}
                 </CardTitle>
                 <CardDescription className="text-center">
-                  {match.description} • {match.venue}
+                  {match.title || "Match Details"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -92,33 +166,49 @@ const MatchDetails = () => {
                     <div className="text-2xl sm:text-3xl font-bold text-football-primary">
                       {match.oddsA}x
                     </div>
-                    <Button
-                      variant={selectedTeam === match.teamA ? "default" : "outline"}
-                      onClick={() => setSelectedTeam(match.teamA)}
+                    <AuthRequiredAction
+                      fallbackText="Login to place bets"
+                      buttonText={`Bet on ${match.teamA}`}
                       className="w-full py-2 sm:py-3 text-base sm:text-lg"
+                      variant={selectedTeam === match.teamA ? "default" : "outline"}
                     >
-                      Bet on {match.teamA}
-                    </Button>
+                      <Button
+                        variant={selectedTeam === match.teamA ? "default" : "outline"}
+                        onClick={() => setSelectedTeam(match.teamA)}
+                        className="w-full py-2 sm:py-3 text-base sm:text-lg"
+                        disabled={match.status !== "Scheduled" && match.status !== "Ongoing"}
+                      >
+                        Bet on {match.teamA}
+                      </Button>
+                    </AuthRequiredAction>
                   </div>
                   <div className="space-y-3 mt-4 sm:mt-0">
                     <h3 className="text-lg sm:text-xl font-semibold">{match.teamB}</h3>
                     <div className="text-2xl sm:text-3xl font-bold text-football-primary">
                       {match.oddsB}x
                     </div>
-                    <Button
-                      variant={selectedTeam === match.teamB ? "default" : "outline"}
-                      onClick={() => setSelectedTeam(match.teamB)}
+                    <AuthRequiredAction
+                      fallbackText="Login to place bets"
+                      buttonText={`Bet on ${match.teamB}`}
                       className="w-full py-2 sm:py-3 text-base sm:text-lg"
+                      variant={selectedTeam === match.teamB ? "default" : "outline"}
                     >
-                      Bet on {match.teamB}
-                    </Button>
+                      <Button
+                        variant={selectedTeam === match.teamB ? "default" : "outline"}
+                        onClick={() => setSelectedTeam(match.teamB)}
+                        className="w-full py-2 sm:py-3 text-base sm:text-lg"
+                        disabled={match.status !== "Scheduled" && match.status !== "Ongoing"}
+                      >
+                        Bet on {match.teamB}
+                      </Button>
+                    </AuthRequiredAction>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-center text-muted-foreground text-sm">
                     <Users className="w-4 h-4 mr-2" />
-                    {match.totalBets} predictions placed
+                    {match.totalBets || 0} predictions placed
                   </div>
                 </div>
               </CardContent>
@@ -154,7 +244,7 @@ const MatchDetails = () => {
                     max="1250"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Available: 1,250 coins
+                    Available: {userCoins !== null ? userCoins.toLocaleString() : "--"} coins
                   </p>
                 </div>
 
@@ -173,13 +263,19 @@ const MatchDetails = () => {
                   </div>
                 )}
 
-                <Button 
-                  onClick={handlePlaceBet}
-                  disabled={!selectedTeam || !betAmount}
+                <AuthRequiredAction
+                  fallbackText="Login to confirm your bet"
+                  buttonText="Login to Bet"
                   className="w-full"
                 >
-                  Confirm Bet
-                </Button>
+                  <Button 
+                    onClick={handlePlaceBet}
+                    disabled={!selectedTeam || !betAmount || placingBet}
+                    className="w-full"
+                  >
+                    {placingBet ? "Placing Bet..." : "Confirm Bet"}
+                  </Button>
+                </AuthRequiredAction>
               </CardContent>
             </Card>
           </div>

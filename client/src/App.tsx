@@ -17,6 +17,9 @@ import AdminBets from "./pages/AdminBets";
 import AdminRoute from "@/components/AdminRoute";
 import AdminUsers from "@/pages/AdminUsers";
 import UserRoute from "@/components/UserRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import PlaceBet from "@/pages/PlaceBet";
+import PlayGame from "@/pages/PlayGame";
 
 const queryClient = new QueryClient();
 
@@ -45,13 +48,33 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/dashboard/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
             <Route path="/admin/bets" element={<AdminRoute><AdminBets /></AdminRoute>} />
             <Route path="/match/:id" element={<MatchDetails />} />
+            {/* User profile routes - require authentication */}
             <Route path="/profile" element={<UserRoute><Profile /></UserRoute>} />
             <Route path="/betting-history" element={<UserRoute><BettingHistory /></UserRoute>} />
             <Route path="/settings" element={<UserRoute><Settings /></UserRoute>} />
+            
+            {/* Betting and play routes - require authentication */}
+            <Route 
+              path="/place-bet" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <PlaceBet />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/play" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <PlayGame />
+                </ProtectedRoute>
+              } 
+            />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

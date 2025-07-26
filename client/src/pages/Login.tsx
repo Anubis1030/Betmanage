@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +13,18 @@ const Login = () => {
   const [registerData, setRegisterData] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const redirect = new URLSearchParams(search).get('redirect') || '/';
 
 
-
-const handleLogin = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   try {
     const { data } = await AuthAPI.login(loginData);
-    localStorage.setItem('token', data.token);
-    navigate('/');
+    if (data?.token) {
+      localStorage.setItem("token", data.token);
+      navigate(redirect); // Redirect to originally requested page
+    }
   } catch (error) {
     toast({ title: 'Login Failed', variant: 'destructive' });
   }
@@ -53,8 +56,8 @@ const handleLogin = async (e: React.FormEvent) => {
         description: "Your account has been created successfully!",
       });
       
-      // Navigate to home page after successful registration
-      navigate("/");
+      // Navigate to the redirect URL or home page after successful registration
+      navigate(redirect);
     } catch (error: any) {
       toast({
         title: "Registration Failed",
@@ -79,7 +82,7 @@ const handleLogin = async (e: React.FormEvent) => {
             </TabsList>
             
             <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input

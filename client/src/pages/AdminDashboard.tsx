@@ -14,6 +14,7 @@ import { MatchesAPI } from "@/api";
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [newMatch, setNewMatch] = useState({
+    title: "",
     teamA: "",
     teamB: "",
     dateTime: "",
@@ -44,6 +45,7 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       const matchData = {
+        title: newMatch.title,
         teamA: newMatch.teamA,
         teamB: newMatch.teamB,
         startTime: newMatch.dateTime,
@@ -56,7 +58,7 @@ const AdminDashboard = () => {
           title: "Match Created",
           description: `${newMatch.teamA} vs ${newMatch.teamB} scheduled successfully!`,
         });
-        setNewMatch({ teamA: "", teamB: "", dateTime: "", oddsA: "", oddsB: "" });
+        setNewMatch({ title: "", teamA: "", teamB: "", dateTime: "", oddsA: "", oddsB: "" });
       } else {
         throw new Error("No match created");
       }
@@ -173,6 +175,16 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleCreateMatch} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Match Title</Label>
+                      <Input
+                        id="title"
+                        placeholder="Enter match title"
+                        value={newMatch.title}
+                        onChange={(e) => setNewMatch({ ...newMatch, title: e.target.value })}
+                        required
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="teamA">Team A</Label>

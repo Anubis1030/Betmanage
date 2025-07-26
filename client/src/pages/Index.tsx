@@ -188,7 +188,7 @@ const Index = () => {
                     <div className="text-red-500">{error}</div>
                   ) : (
                     matches.slice(0, 2).map((match) => (
-                      <MatchCard key={match._id || match.id} {...match} />
+                      <MatchCard key={match._id || match.id} id={match._id} {...match} />
                     ))
                   )}
                 </div>
@@ -217,7 +217,7 @@ const Index = () => {
                 <div className="text-red-500">{error}</div>
               ) : (
                 matches.map((match) => (
-                  <MatchCard key={match._id || match.id} {...match} />
+                  <MatchCard key={match._id || match.id} id={match._id} {...match} />
                 ))
               )}
             </div>

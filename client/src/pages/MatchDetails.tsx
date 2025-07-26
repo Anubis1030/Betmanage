@@ -10,6 +10,7 @@ import { ArrowLeft, Clock, Trophy, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MatchesAPI, BetsAPI, AuthAPI } from "@/api";
 import { AuthRequiredAction } from "@/components/AuthRequiredAction";
+import { InsufficientCoinsAlert } from "@/components/InsufficientCoinsAlert";
 
 const MatchDetails = () => {
   const { id } = useParams();
@@ -82,7 +83,15 @@ const MatchDetails = () => {
         description: "You don't have enough coins for this bet",
         variant: "destructive",
       });
+      
+      // Show the detailed insufficient coins alert directly in the UI
+      setError("insufficient_coins");
       return;
+    } else {
+      // Clear any previous insufficient coins error
+      if (error === "insufficient_coins") {
+        setError(null);
+      }
     }
 
     try {
@@ -127,7 +136,7 @@ const MatchDetails = () => {
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (error || !match) return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Match not found"}</div>;
+  if (error && error !== "insufficient_coins" && !match) return <div className="min-h-screen flex items-center justify-center text-red-500">{error || "Match not found"}</div>;
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,10 +251,20 @@ const MatchDetails = () => {
                     onChange={(e) => setBetAmount(e.target.value)}
                     min="1"
                     max="1250"
+                    className={error === "insufficient_coins" ? "border-destructive" : ""}
                   />
                   <p className="text-xs text-muted-foreground">
                     Available: {userCoins !== null ? userCoins.toLocaleString() : "--"} coins
                   </p>
+                  
+                  {error === "insufficient_coins" && betAmount && (
+                    <div className="mt-2">
+                      <InsufficientCoinsAlert 
+                        currentBalance={userCoins} 
+                        requiredAmount={Number(betAmount)} 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {selectedTeam && betAmount && (

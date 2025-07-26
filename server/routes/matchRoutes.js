@@ -3,6 +3,7 @@ import {
   createMatch, 
   lockMatch, 
   setMatchResult, 
+  updateMatch,
   getActiveMatches, 
   getMatchById, 
   getCompletedMatches, 
@@ -17,6 +18,7 @@ router.get('/completed', getCompletedMatches);
 router.get('/upcoming', getUpcomingMatches);
 router.get('/:id', getMatchById);
 router.post('/', protect, admin, createMatch);
+router.put('/:id', protect, admin, updateMatch);
 router.put('/:id/lock', protect, admin, lockMatch);
 router.put('/:id/result', protect, admin, setMatchResult);
 

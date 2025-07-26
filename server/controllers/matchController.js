@@ -1,4 +1,5 @@
 import Match from '../models/Match.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Create a new match
 // @route   POST /api/matches
@@ -48,8 +49,18 @@ export const setMatchResult = async (req, res) => {
     const match = await Match.findById(req.params.id);
     
     if(match) {
-      match.result = req.body.result;
+      // Get the winner from request body
+      match.result = req.body.winner;
       match.status = 'Completed';
+      
+      // Store scores if provided (optional fields)
+      if (req.body.teamAScore !== undefined) {
+        match.teamAScore = req.body.teamAScore;
+      }
+      
+      if (req.body.teamBScore !== undefined) {
+        match.teamBScore = req.body.teamBScore;
+      }
       
       const updatedMatch = await match.save();
       res.json(updatedMatch);
@@ -110,5 +121,38 @@ export const getUpcomingMatches = async (req, res) => {
     res.json({ success: true, data: matches });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update match details
+// @route   PUT /api/matches/:id
+// @access  Private/Admin
+export const updateMatch = async (req, res) => {
+  try {
+    const match = await Match.findById(req.params.id);
+
+    if (!match) {
+      return res.status(404).json({ message: 'Match not found' });
+    }
+
+    // Only allow updates if match is in Scheduled status
+    if (match.status !== 'Scheduled') {
+      return res.status(400).json({ message: 'Cannot update match that is already locked or completed' });
+    }
+
+    const { title, startTime, teamA, teamB, oddsA, oddsB } = req.body;
+
+    if (title) match.title = title;
+    if (startTime) match.startTime = startTime;
+    if (teamA) match.teamA = teamA;
+    if (teamB) match.teamB = teamB;
+    if (oddsA) match.oddsA = oddsA;
+    if (oddsB) match.oddsB = oddsB;
+
+    const updatedMatch = await match.save();
+
+    res.json(updatedMatch);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

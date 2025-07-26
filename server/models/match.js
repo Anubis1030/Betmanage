@@ -7,9 +7,11 @@ const MatchSchema = new mongoose.Schema({
   teamB: { type: String, required: true },
   oddsA: { type: Number, required: true, min: 1 },
   oddsB: { type: Number, required: true, min: 1 },
+  teamAScore: { type: Number, default: 0 },
+  teamBScore: { type: Number, default: 0 },
   status: { 
     type: String, 
-    enum: ['Scheduled', 'Ongoing', 'Completed'], 
+    enum: ['Scheduled', 'Ongoing', 'Locked', 'Completed'], 
     default: 'Scheduled' 
   },
   result: { 

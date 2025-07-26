@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Trophy, Coins, TrendingUp, Plus, Settings, BarChart3 } from "lucide-react";
+import { Users, Trophy, Coins, TrendingUp, Plus, Settings, BarChart3, Edit, Lock, Award } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { MatchesAPI } from "@/api";
+import EditMatchModal from "@/components/EditMatchModal";
+import SetMatchResultModal from "@/components/SetMatchResultModal";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -22,6 +24,11 @@ const AdminDashboard = () => {
     oddsB: ""
   });
   const navigate = useNavigate();
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
   const adminStats = {
     totalUsers: 156,
@@ -36,10 +43,25 @@ const AdminDashboard = () => {
     { id: 3, name: "Mike Johnson", email: "mike@example.com", coins: 2100, status: "active" },
   ];
 
-  const pendingMatches = [
-    { id: 1, teamA: "Barcelona", teamB: "Real Madrid", date: "2024-01-22", status: "pending" },
-    { id: 2, teamA: "Arsenal", teamB: "Chelsea", date: "2024-01-21", status: "live" },
-  ];
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+  const fetchMatches = async () => {
+    setLoading(true);
+    try {
+      const activeResponse = await MatchesAPI.getActiveMatches();
+      setMatches(activeResponse.data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch matches",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +81,7 @@ const AdminDashboard = () => {
           description: `${newMatch.teamA} vs ${newMatch.teamB} scheduled successfully!`,
         });
         setNewMatch({ title: "", teamA: "", teamB: "", dateTime: "", oddsA: "", oddsB: "" });
+        fetchMatches(); // Refresh the matches list
       } else {
         throw new Error("No match created");
       }
@@ -69,6 +92,33 @@ const AdminDashboard = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditMatch = (match) => {
+    setSelectedMatch(match);
+    setIsEditModalOpen(true);
+  };
+
+  const handleLockMatch = async (matchId) => {
+    try {
+      await MatchesAPI.lockMatch(matchId);
+      toast({
+        title: "Match Locked",
+        description: "The match has been locked for betting."
+      });
+      fetchMatches(); // Refresh the matches list
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to lock match.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSetResult = (match) => {
+    setSelectedMatch(match);
+    setIsResultModalOpen(true);
   };
 
   const handleCoinAdjustment = (userId: number, amount: number) => {
@@ -255,20 +305,55 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {pendingMatches.map((match) => (
-                      <div key={match.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <div className="font-medium">{match.teamA} vs {match.teamB}</div>
-                          <div className="text-sm text-muted-foreground">{match.date}</div>
+                    {loading ? (
+                      <div className="text-center py-4">Loading matches...</div>
+                    ) : matches.length === 0 ? (
+                      <div className="text-center py-4">No active matches found</div>
+                    ) : (
+                      matches.map((match) => (
+                        <div key={match._id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <div className="font-medium">{match.title}</div>
+                            <div className="font-medium">{match.teamA} vs {match.teamB}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(match.startTime).toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={match.status === "Ongoing" ? "default" : "secondary"}>
+                              {match.status}
+                            </Badge>
+                            {match.status === "Scheduled" && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleEditMatch(match)}
+                                >
+                                  <Edit className="w-4 h-4 mr-1" /> Edit
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleLockMatch(match._id)}
+                                >
+                                  <Lock className="w-4 h-4 mr-1" /> Lock
+                                </Button>
+                              </>
+                            )}
+                            {(match.status === "Ongoing" || match.status === "Locked") && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleSetResult(match)}
+                              >
+                                <Award className="w-4 h-4 mr-1" /> Set Result
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={match.status === "live" ? "default" : "secondary"}>
-                            {match.status}
-                          </Badge>
-                          <Button size="sm" variant="outline">Edit</Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -431,6 +516,18 @@ const AdminDashboard = () => {
           </Link>
         </div>
       </div>
+      <EditMatchModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        match={selectedMatch} 
+        onMatchUpdated={fetchMatches} 
+      />
+      <SetMatchResultModal
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        match={selectedMatch}
+        onMatchUpdated={fetchMatches}
+      />
     </div>
   );
 };
